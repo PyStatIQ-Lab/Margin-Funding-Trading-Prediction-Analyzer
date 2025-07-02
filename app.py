@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from st_aggrid import AgGrid, GridOptionsBuilder, JsCode
 
 # Set page configuration
 st.set_page_config(
@@ -296,20 +295,19 @@ with st.container():
                 
             # Create a radar chart for risk profile
             radar_df = pd.DataFrame(dict(
-                r=[selected['Predicted_Return_5d'] * 5,
-                theta=['Return', 'Risk/Share', 'Volatility', 'VaR', 'Margin Probability'],
-                values=[
-                    selected['Predicted_Return_5d'],
+                r=[
+                    selected['Predicted_Return_5d'] * 100,  # Scale for visibility
                     1 - selected['Risk_per_Share']/100,
                     1 - selected['Volatility_20d'],
                     1 - selected['Value_at_Risk_95'],
                     1 - selected['Margin_Call_Probability']
-                ]
+                ],
+                theta=['Return', 'Risk/Share', 'Volatility', 'VaR', 'Margin Probability']
             ))
             
             fig = px.line_polar(
                 radar_df, 
-                r='values', 
+                r='r', 
                 theta='theta', 
                 line_close=True,
                 title=f"Risk Profile: {selected['Symbol']}",
