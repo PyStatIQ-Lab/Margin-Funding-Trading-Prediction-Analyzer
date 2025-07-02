@@ -230,6 +230,8 @@ if len(top_10) > 5:
             </div>
             ''', unsafe_allow_html=True)
 
+# Replace the Stock Search Section with this corrected code:
+
 # Stock Search Section
 st.subheader("Stock Search & Analysis")
 with st.container():
@@ -266,8 +268,9 @@ with st.container():
         for col, fmt in formatting.items():
             formatted_df[col] = formatted_df[col].apply(lambda x: fmt.format(x))
         
-        # Display in an interactive table
-        st.dataframe(formatted_df, height=min(400, 35 * len(search_results) + 35)
+        # Display in an interactive table (FIXED THIS LINE)
+        table_height = min(400, 35 * len(search_results) + 35)
+        st.dataframe(formatted_df, height=table_height)
         
         # Detailed view for selected stock
         if len(search_results) == 1:
@@ -293,28 +296,39 @@ with st.container():
                 st.metric("Max Shares", f"{selected['Max_Shares']:,}")
                 st.metric("Margin Utilization", f"{selected['Margin_Utilization_%']:.1f}%")
                 
-            # Create a radar chart for risk profile
-            radar_df = pd.DataFrame(dict(
-                r=[
-                    selected['Predicted_Return_5d'] * 100,  # Scale for visibility
-                    1 - selected['Risk_per_Share']/100,
-                    1 - selected['Volatility_20d'],
-                    1 - selected['Value_at_Risk_95'],
-                    1 - selected['Margin_Call_Probability']
-                ],
-                theta=['Return', 'Risk/Share', 'Volatility', 'VaR', 'Margin Probability']
-            ))
-            
-            fig = px.line_polar(
-                radar_df, 
-                r='r', 
-                theta='theta', 
-                line_close=True,
-                title=f"Risk Profile: {selected['Symbol']}",
-                height=300
-            )
-            fig.update_traces(fill='toself')
-            st.plotly_chart(fig, use_container_width=True)
+            # Create a radar chart for risk profile (FIXED THIS TOO)
+            try:
+                radar_df = pd.DataFrame({
+                    'r': [
+                        selected['Predicted_Return_5d'] * 100,  # Scale for visibility
+                        (1 - selected['Risk_per_Share']/100) * 100,
+                        (1 - selected['Volatility_20d']) * 100,
+                        (1 - selected['Value_at_Risk_95']) * 100,
+                        (1 - selected['Margin_Call_Probability']) * 100
+                    ],
+                    'theta': ['Return', 'Risk/Share', 'Volatility', 'VaR', 'Margin Probability']
+                })
+                
+                fig = px.line_polar(
+                    radar_df, 
+                    r='r', 
+                    theta='theta', 
+                    line_close=True,
+                    title=f"Risk Profile: {selected['Symbol']}",
+                    height=300
+                )
+                fig.update_traces(fill='toself')
+                fig.update_layout(
+                    polar=dict(
+                        radialaxis=dict(
+                            visible=True,
+                            range=[0, 100]
+                        )),
+                    showlegend=False
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.error(f"Could not create radar chart: {str(e)}")
     else:
         st.warning("No stocks found matching your search criteria")
 
